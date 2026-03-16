@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Skills Marketplace</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0d10;
+      --surface:   #131720;
+      --surface2:  #1b2030;
+      --border:    #242b3a;
+      --accent:    #f0a500;
+      --accent2:   #ff6b35;
+      --text:      #e8ecf4;
+      --muted:     #7a8499;
+      --tag-bg:    #1e2a3a;
+      --tag-text:  #7ab8f5;
+      --radius:    14px;
+      --card-w:    320px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Noise overlay ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: .4;
+    }
+
+    /* ─── Header ─── */
+    header {
+      position: relative;
+      padding: 60px 40px 50px;
+      background: linear-gradient(135deg, #0f1420 0%, #141b2e 50%, #0b0d10 100%);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      top: -80px; right: -100px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(240,165,0,.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative; z-index: 1;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(240,165,0,.1);
+      border: 1px solid rgba(240,165,0,.25);
+      color: var(--accent);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 999px;
+      width: fit-content;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.4; transform:scale(1.4); }
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+    }
+    h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 540px;
+      font-weight: 300;
+    }
+    .stats-row {
+      display: flex;
+      gap: 28px;
+      margin-top: 8px;
+    }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; }
+
+    /* ─── Controls ─── */
+    .controls {
+      max-width: 1200px;
+      margin: 36px auto 0;
+      padding: 0 40px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    input[type="search"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 11px 16px 11px 42px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input[type="search"]::placeholder { color: var(--muted); }
+    input[type="search"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(240,165,0,.12);
+    }
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      padding: 8px 16px;
+      transition: all .18s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0b0d10;
+      font-weight: 600;
+    }
+
+    /* ─── Grid ─── */
+    .grid-wrap {
+      max-width: 1200px;
+      margin: 32px auto 80px;
+      padding: 0 40px;
+    }
+    .grid-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 20px;
+    }
+    .grid-label strong { color: var(--text); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+      gap: 22px;
+    }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .22s, border-color .22s, box-shadow .22s;
+      animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.015) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(240,165,0,.35);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4), 0 0 0 1px rgba(240,165,0,.1);
+    }
+
+    .card-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .card-top { display: flex; align-items: flex-start; gap: 14px; }
+
+    .card-meta { flex: 1; }
+    .card-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .card-version {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 300;
+    }
+
+    .card-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-weight: 500;
+      letter-spacing: .03em;
+    }
+
+    .card-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      align-items: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 16px;
+      text-decoration: none;
+      transition: all .18s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0b0d10;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover { background: #ffc733; border-color: #ffc733; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 -26px;
+    }
+
+    /* ─── Empty state ─── */
+    .empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; color: var(--text); margin-bottom: 8px; }
+
+    /* ─── Add skill modal ─── */
+    .add-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0b0d10;
+      border: none;
+      border-radius: var(--radius);
+      padding: 11px 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .18s, transform .18s;
+    }
+    .add-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px;
+      width: 100%;
+      max-width: 520px;
+      transform: translateY(20px);
+      transition: transform .25s;
+      position: relative;
+    }
+    .overlay.open .modal { transform: translateY(0); }
+    .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .05em; }
+    input[type="text"], input[type="url"], textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+    select option { background: var(--surface2); }
+
+    .form-row { display: flex; gap: 14px; }
+    .form-row .form-group { flex: 1; }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .close-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      transition: color .18s;
+    }
+    .close-btn:hover { color: var(--text); }
+
+    /* ─── Footer ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      header, .controls, .grid-wrap { padding-left: 20px; padding-right: 20px; }
+      .form-row { flex-direction: column; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ░░ HEADER ░░ -->
+<header>
+  <div class="header-inner">
+    <div class="badge"><span class="badge-dot"></span> Live Marketplace</div>
+    <h1>Agent Skills<br><span>Marketplace</span></h1>
+    <p class="subtitle">Discover, share, and deploy pre-built skills that supercharge your AI agents. Plug &amp; play capabilities for any workflow.</p>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-num" id="totalCount">0</span><span class="stat-label">Skills</span></div>
+      <div class="stat"><span class="stat-num" id="categoryCount">0</span><span class="stat-label">Categories</span></div>
+      <div class="stat"><span class="stat-num">Free</span><span class="stat-label">Always</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ░░ CONTROLS ░░ -->
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="search" id="searchInput" placeholder="Search skills by name, description or tag…" />
+  </div>
+  <div class="filters" id="filterBtns"></div>
+  <button class="add-btn" onclick="openModal()">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Add Skill
+  </button>
+</div>
+
+<!-- ░░ GRID ░░ -->
+<div class="grid-wrap">
+  <div class="grid-label">Showing <strong id="showingCount">0</strong> skills</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- ░░ ADD SKILL MODAL ░░ -->
+<div class="overlay" id="overlay" onclick="closeOnBackdrop(event)">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <h2>Add a New Skill</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Skill Name *</label>
+        <input type="text" id="f_name" placeholder="e.g. PDF Summarizer" />
+      </div>
+      <div class="form-group">
+        <label>Version</label>
+        <input type="text" id="f_version" placeholder="v1.0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea id="f_desc" placeholder="What does this skill do? What problems does it solve?"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Category</label>
+        <select id="f_cat">
+          <option value="Documents">Documents</option>
+          <option value="Data">Data</option>
+          <option value="Communication">Communication</option>
+          <option value="Automation">Automation</option>
+          <option value="Research">Research</option>
+          <option value="Design">Design</option>
+          <option value="Developer">Developer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Icon (emoji)</label>
+        <input type="text" id="f_icon" placeholder="📄" maxlength="4" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Tags (comma separated)</label>
+      <input type="text" id="f_tags" placeholder="word, pdf, automation" />
+    </div>
+    <div class="form-group">
+      <label>Download / Use Link *</label>
+      <input type="url" id="f_link" placeholder="https://github.com/…" />
+    </div>
+    <div class="form-group">
+      <label>Documentation Link</label>
+      <input type="url" id="f_docs" placeholder="https://…" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addSkill()">Add Skill</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ FOOTER ░░ -->
+<footer>
+  Agent Skills Marketplace &mdash; Built for teams who move fast &nbsp;·&nbsp;
+  <a href="https://github.com/" target="_blank">Contribute on GitHub</a>
+</footer>
+
+<script>
+  /* ── Default skill data ── */
+  const DEFAULT_SKILLS = [
+    // ── Documents ──
+    {
+      id: 1, name: "Word Document Creator", version: "v2.1",
+      desc: "Create, read, edit, and manipulate Word documents (.docx). Generate professional documents with tables of contents, headings, page numbers, and letterheads.",
+      category: "Documents", icon: "📝",
+      tags: ["word", "docx", "reports", "templates"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#2563eb"
+    },
+    {
+      id: 2, name: "PDF Toolkit", version: "v1.8",
+      desc: "Read, extract, combine, split, watermark, and fill PDF forms. Supports OCR on scanned PDFs for full-text search and extraction without any third-party tools.",
+      category: "Documents", icon: "📑",
+      tags: ["pdf", "ocr", "forms", "merge"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#dc2626"
+    },
+    {
+      id: 3, name: "PowerPoint Builder", version: "v1.5",
+      desc: "Create and edit slide decks and presentations. Supports templates, layouts, speaker notes, and extraction of text from existing .pptx files for summarisation or editing.",
+      category: "Documents", icon: "📊",
+      tags: ["pptx", "slides", "deck", "presentation"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#ea580c"
+    },
+    {
+      id: 4, name: "Excel & Spreadsheet Agent", version: "v2.0",
+      desc: "Open, read, edit, and create .xlsx/.csv files. Add formulas, pivot tables, and charts. Clean messy data and convert between tabular formats with a single prompt.",
+      category: "Documents", icon: "📈",
+      tags: ["xlsx", "csv", "data", "spreadsheet", "formulas"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#16a34a"
+    },
+    // ── Communication ──
+    {
+      id: 5, name: "Email Drafter", version: "v1.4",
+      desc: "Draft professional emails, follow-ups, cold outreach, and meeting invites. Adapts tone from formal to friendly and supports multi-language output.",
+      category: "Communication", icon: "✉️",
+      tags: ["email", "gmail", "outlook", "drafting", "tone"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#0ea5e9"
+    },
+    {
+      id: 6, name: "Slack Message Composer", version: "v1.2",
+      desc: "Compose context-aware Slack messages, channel announcements, and threaded replies. Understands workspace jargon and keeps messages concise and actionable.",
+      category: "Communication", icon: "💬",
+      tags: ["slack", "messaging", "announcements", "threads"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#7c3aed"
+    },
+    {
+      id: 7, name: "Meeting Notes Summariser", version: "v2.3",
+      desc: "Paste raw meeting transcripts or audio-to-text output and receive structured summaries with decisions made, action items, owners, and deadlines highlighted.",
+      category: "Communication", icon: "🗒️",
+      tags: ["meetings", "transcripts", "summaries", "action-items"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#0891b2"
+    },
+    // ── Data ──
+    {
+      id: 8, name: "SQL Query Builder", version: "v1.7",
+      desc: "Generate, explain, and optimise SQL queries from plain-English descriptions. Supports PostgreSQL, MySQL, SQLite, and BigQuery dialects with schema-aware completions.",
+      category: "Data", icon: "🗄️",
+      tags: ["sql", "database", "postgres", "mysql", "bigquery"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#16a34a"
+    },
+    {
+      id: 9, name: "Data Visualisation Agent", version: "v1.3",
+      desc: "Turn raw CSV or JSON data into publication-ready charts, graphs, and dashboards. Outputs reusable Python (matplotlib/plotly) or JavaScript (Chart.js/D3) code.",
+      category: "Data", icon: "📉",
+      tags: ["charts", "graphs", "plotly", "d3", "matplotlib"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#f59e0b"
+    },
+    {
+      id: 10, name: "JSON Schema Validator", version: "v1.0",
+      desc: "Validate, lint, and auto-fix JSON payloads against a schema. Detects missing required fields, type mismatches, and produces a human-readable error report.",
+      category: "Data", icon: "🔧",
+      tags: ["json", "schema", "validation", "linting", "api"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#ca8a04"
+    },
+    // ── Automation ──
+    {
+      id: 11, name: "Calendar Event Planner", version: "v1.1",
+      desc: "Parse natural-language requests like 'schedule a 1-hour sync with the team next Tuesday afternoon' and create structured Google Calendar or Outlook events.",
+      category: "Automation", icon: "📅",
+      tags: ["calendar", "scheduling", "google", "outlook", "events"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#2563eb"
+    },
+    {
+      id: 12, name: "Browser Task Agent", version: "v1.9",
+      desc: "Automate repetitive browser tasks: fill forms, scrape tables, click through workflows, and extract structured data from any public web page.",
+      category: "Automation", icon: "🌐",
+      tags: ["browser", "scraping", "automation", "playwright", "forms"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#dc2626"
+    },
+    {
+      id: 13, name: "File Organiser", version: "v1.0",
+      desc: "Scan a folder, infer categories from file names and content, and reorganise everything into a clean directory structure. Supports batch rename and deduplication.",
+      category: "Automation", icon: "🗂️",
+      tags: ["files", "folders", "rename", "organise", "cleanup"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#9333ea"
+    },
+    // ── Research ──
+    {
+      id: 14, name: "Web Research Agent", version: "v1.6",
+      desc: "Perform deep web research with multi-source synthesis. Searches, fetches, and summarises current information from the web with properly attributed citations.",
+      category: "Research", icon: "🔍",
+      tags: ["search", "web", "research", "citations", "synthesis"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#0ea5e9"
+    },
+    {
+      id: 15, name: "Competitive Intelligence", version: "v1.2",
+      desc: "Monitor competitors' websites, press releases, and job postings. Produces weekly briefings with product changes, pricing shifts, and strategic moves detected.",
+      category: "Research", icon: "🕵️",
+      tags: ["competitive", "monitoring", "intelligence", "strategy"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#e11d48"
+    },
+    {
+      id: 16, name: "Academic Paper Digest", version: "v1.0",
+      desc: "Upload or link any arXiv / PubMed paper and receive a jargon-free summary, key findings, methodology breakdown, and a list of follow-up readings.",
+      category: "Research", icon: "🎓",
+      tags: ["papers", "arxiv", "pubmed", "summarise", "academic"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#0891b2"
+    },
+    // ── Developer ──
+    {
+      id: 17, name: "Code Reviewer", version: "v2.2",
+      desc: "Review pull requests and code snippets for bugs, security issues, and style violations. Supports Python, TypeScript, Go, Rust, and Java with configurable rulesets.",
+      category: "Developer", icon: "🧪",
+      tags: ["code-review", "pull-request", "bugs", "security", "linting"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#7c3aed"
+    },
+    {
+      id: 18, name: "API Documentation Writer", version: "v1.4",
+      desc: "Generate OpenAPI/Swagger specs and human-readable docs from your route definitions or source code. Includes example requests, error codes, and auth notes.",
+      category: "Developer", icon: "📖",
+      tags: ["api", "openapi", "swagger", "docs", "rest"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#f59e0b"
+    },
+    {
+      id: 19, name: "Skill Creator & Optimizer", version: "v1.1",
+      desc: "Create new skills from scratch, modify and improve existing ones, run evaluations, benchmark performance with variance analysis, and optimise skill descriptions.",
+      category: "Developer", icon: "⚙️",
+      tags: ["meta", "evals", "benchmarks", "optimization", "prompts"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#16a34a"
+    },
+    {
+      id: 20, name: "Unit Test Generator", version: "v1.3",
+      desc: "Paste a function or module and receive a complete test suite with edge cases, mocks, and assertions. Outputs pytest, Jest, or Go test files ready to run.",
+      category: "Developer", icon: "✅",
+      tags: ["testing", "pytest", "jest", "tdd", "unit-tests"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#059669"
+    },
+    // ── Design ──
+    {
+      id: 21, name: "Frontend Design Generator", version: "v1.3",
+      desc: "Create distinctive, production-grade frontend interfaces. Generates React components, landing pages, and dashboards that avoid generic AI aesthetics.",
+      category: "Design", icon: "🎨",
+      tags: ["react", "html", "css", "ui", "components"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#9333ea"
+    },
+    {
+      id: 22, name: "Brand Voice Analyser", version: "v1.0",
+      desc: "Analyse a sample of your existing content to extract tone, vocabulary, and style guidelines. Outputs a Brand Voice Card your whole team can reference.",
+      category: "Design", icon: "🖋️",
+      tags: ["brand", "copywriting", "tone", "style-guide", "voice"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#db2777"
+    },
+    // ── HR & People ──
+    {
+      id: 23, name: "Job Description Writer", version: "v1.2",
+      desc: "Draft inclusive, engaging job descriptions from a brief role summary. Flags potentially biased language and suggests inclusive alternatives automatically.",
+      category: "HR & People", icon: "🧑‍💼",
+      tags: ["hiring", "jd", "recruiting", "inclusive", "hr"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#0891b2"
+    },
+    {
+      id: 24, name: "Performance Review Assistant", version: "v1.0",
+      desc: "Help managers write balanced, evidence-based performance reviews. Prompts for specific examples, avoids recency bias, and structures feedback into clear sections.",
+      category: "HR & People", icon: "⭐",
+      tags: ["performance", "reviews", "feedback", "managers", "hr"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#f59e0b"
+    },
+    // ── Finance ──
+    {
+      id: 25, name: "Invoice Parser", version: "v1.5",
+      desc: "Upload PDF or image invoices and extract vendor, line items, totals, tax, and due dates into structured JSON or Excel rows ready for your accounting system.",
+      category: "Finance", icon: "🧾",
+      tags: ["invoice", "accounting", "ocr", "extraction", "finance"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#16a34a"
+    },
+    {
+      id: 26, name: "Budget Analyser", version: "v1.1",
+      desc: "Ingest monthly spend CSVs and receive a plain-English commentary on trends, over-budget categories, and recommendations to hit quarterly financial targets.",
+      category: "Finance", icon: "💰",
+      tags: ["budget", "spend", "analysis", "forecasting", "finance"],
+      link: "https://github.com/anthropics/anthropic-quickstarts",
+      docs: "https://docs.anthropic.com",
+      color: "#ca8a04"
+    }
+  ];
+
+  // Wipe old cache so expanded defaults load fresh; new additions persist from here
+  if (!localStorage.getItem('marketplace_v2')) {
+    localStorage.removeItem('marketplace_skills');
+    localStorage.setItem('marketplace_v2', '1');
+  }
+  let skills = JSON.parse(localStorage.getItem('marketplace_skills') || 'null') || DEFAULT_SKILLS;
+  let activeFilter = 'All';
+  let searchQuery = '';
+
+  function save() {
+    localStorage.setItem('marketplace_skills', JSON.stringify(skills));
+  }
+
+  function getCategories() {
+    const cats = [...new Set(skills.map(s => s.category))].sort();
+    return ['All', ...cats];
+  }
+
+  function filtered() {
+    return skills.filter(s => {
+      const matchCat = activeFilter === 'All' || s.category === activeFilter;
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q
+        || s.name.toLowerCase().includes(q)
+        || s.desc.toLowerCase().includes(q)
+        || s.tags.some(t => t.toLowerCase().includes(q))
+        || s.category.toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    });
+  }
+
+  function renderFilters() {
+    const cats = getCategories();
+    const wrap = document.getElementById('filterBtns');
+    wrap.innerHTML = cats.map(c =>
+      `<button class="filter-btn ${c===activeFilter?'active':''}" onclick="setFilter('${c}')">${c}</button>`
+    ).join('');
+    document.getElementById('categoryCount').textContent = cats.length - 1;
+  }
+
+  function setFilter(cat) {
+    activeFilter = cat;
+    renderFilters();
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const list = filtered();
+    const grid = document.getElementById('grid');
+    document.getElementById('totalCount').textContent = skills.length;
+    document.getElementById('showingCount').textContent = list.length;
+
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">🔎</div><h3>No skills found</h3><p>Try a different search or category filter.</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map((s, i) => `
+      <div class="card" style="animation-delay:${i*0.05}s">
+        <div class="card-top">
+          <div class="card-icon" style="background:${s.color}22; color:${s.color}">${s.icon}</div>
+          <div class="card-meta">
+            <div class="card-name">${escHtml(s.name)}</div>
+            <div class="card-version">${escHtml(s.version || '')} &nbsp;·&nbsp; ${escHtml(s.category)}</div>
+          </div>
+        </div>
+        <p class="card-desc">${escHtml(s.desc)}</p>
+        <div class="tags">${s.tags.map(t=>`<span class="tag">${escHtml(t)}</span>`).join('')}</div>
+        <div class="card-divider"></div>
+        <div class="card-footer">
+          <a class="btn btn-primary" href="${escHtml(s.link)}" target="_blank">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Use Skill
+          </a>
+          ${s.docs ? `<a class="btn btn-ghost" href="${escHtml(s.docs)}" target="_blank">Docs</a>` : ''}
+          <button class="btn btn-ghost" style="margin-left:auto" onclick="removeSkill(${s.id})" title="Remove">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function removeSkill(id) {
+    if (!confirm('Remove this skill from the marketplace?')) return;
+    skills = skills.filter(s => s.id !== id);
+    save(); renderFilters(); renderGrid();
+  }
+
+  /* ── Modal ── */
+  function openModal()  { document.getElementById('overlay').classList.add('open'); }
+  function closeModal() { document.getElementById('overlay').classList.remove('open'); clearForm(); }
+  function closeOnBackdrop(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+
+  function clearForm() {
+    ['f_name','f_version','f_desc','f_tags','f_link','f_docs','f_icon'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f_cat').value = 'Documents';
+  }
+
+  const COLORS = ['#2563eb','#dc2626','#16a34a','#9333ea','#ea580c','#0891b2','#f59e0b','#0ea5e9','#db2777'];
+
+  function addSkill() {
+    const name = document.getElementById('f_name').value.trim();
+    const desc = document.getElementById('f_desc').value.trim();
+    const link = document.getElementById('f_link').value.trim();
+    if (!name || !desc || !link) { alert('Please fill in Name, Description, and Link.'); return; }
+
+    const rawTags = document.getElementById('f_tags').value;
+    const tags = rawTags.split(',').map(t=>t.trim()).filter(Boolean);
+
+    const newSkill = {
+      id: Date.now(),
+      name,
+      version: document.getElementById('f_version').value.trim() || 'v1.0',
+      desc,
+      category: document.getElementById('f_cat').value,
+      icon: document.getElementById('f_icon').value.trim() || '⚡',
+      tags,
+      link,
+      docs: document.getElementById('f_docs').value.trim(),
+      color: COLORS[skills.length % COLORS.length]
+    };
+
+    skills.push(newSkill);
+    save(); closeModal(); renderFilters(); renderGrid();
+  }
+
+  /* ── Search ── */
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    renderGrid();
+  });
+
+  /* ── Init ── */
+  renderFilters();
+  renderGrid();
+</script>
+</body>
+</html>
